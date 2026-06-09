@@ -18,19 +18,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
   const [loading, setLoading] = useState(true)
 
-useEffect(() => {
-  if (!token) {
-    setLoading(false)  
-    return
-  }
-  getMe()
-    .then(setUser)
-    .catch(() => {
-      localStorage.removeItem('token')
-      setToken(null)
-    })
-    .finally(() => setLoading(false))
-}, [token])
+  useEffect(() => {
+    if (!token) {
+      setLoading(false)
+      return
+    }
+    getMe()
+      .then(data => {
+        setUser(data)
+        setLoading(false)
+      })
+      .catch(() => {
+        localStorage.removeItem('token')
+        setToken(null)
+        setLoading(false)
+      })
+  }, [token])
 
   const signIn = async (newToken: string) => {
     localStorage.setItem('token', newToken)
