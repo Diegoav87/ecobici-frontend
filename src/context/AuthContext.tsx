@@ -38,8 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (newToken: string) => {
     localStorage.setItem('token', newToken)
     setToken(newToken)
-    const me = await getMe()
-    setUser(me)
+    try {
+      const me = await getMe()
+      setUser(me)
+      console.log('signIn ok', me)
+    } catch(e) {
+      console.log('signIn error', e)
+      localStorage.removeItem('token')
+      setToken(null)
+    }
   }
 
   const signOut = () => {
