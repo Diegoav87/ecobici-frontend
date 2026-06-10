@@ -12,6 +12,11 @@ export const login = async (email: string, password: string) => {
   return data as { access_token: string; token_type: string }
 }
 
+export const register = async (nombre: string, email: string, password: string) => {
+  const { data } = await api.post('/auth/register', { nombre, email, password })
+  return data as Usuario
+}
+
 export const getMe = async () => {
   const { data } = await api.get('/auth/me')
   return data as Usuario
