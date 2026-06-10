@@ -233,10 +233,9 @@ export default function PrediccionesPage() {
             {/* Métricas */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 20 }}>
               {[
-                { label: 'Precisión', value: `${prediccion.accuracy_semaforo_pct.toFixed(1)}%`, color: '#00A651' },
                 { label: 'Mov. mitigados', value: prediccion.movimientos_mitigados_unidades, color: '#F59E0B' },
                 { label: 'Dist. optimizada', value: `${prediccion.distancia_total_optimizada_local_km.toFixed(1)} km`, color: '#8B5CF6' },
-                { label: 'MAE volumen', value: prediccion.mae_volumen_bicicletas.toFixed(2), color: '#3B82F6' },
+                { label: 'Eficiencia rebalanceo', value: `${prediccion.eficiencia_rebalanceo_local_pct.toFixed(1)}%`, color: '#00A651' },
               ].map(m => (
                 <div key={m.label} style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', border: '1px solid #F0F0F0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
                   <p style={{ color: '#6B7280', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>{m.label}</p>

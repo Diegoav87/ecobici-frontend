@@ -150,7 +150,7 @@ export default function DashboardPage() {
               { label: 'Estaciones OK',     value: counts.ok },
               { label: 'Atención urgente',  value: counts.empty + counts.low },
               { label: 'Total estaciones',  value: stations.length },
-              ...(prediccion ? [{ label: 'Precisión modelo', value: `${prediccion.accuracy_semaforo_pct.toFixed(1)}%` }] : []),
+              ...(prediccion ? [{ label: 'Mov. mitigados', value: prediccion.movimientos_mitigados_unidades }] : []),
             ].map(stat => (
               <div key={stat.label} style={{ textAlign: 'center' }}>
                 <p style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0 }}>{stat.value}</p>

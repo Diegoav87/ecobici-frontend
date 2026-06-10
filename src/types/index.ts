@@ -23,8 +23,6 @@ export interface Ruta {
 export interface Prediccion {
   id: number
   timestamp_evaluacion: string
-  accuracy_semaforo_pct: number
-  mae_volumen_bicicletas: number
   movimientos_mitigados_unidades: number
   eficiencia_rebalanceo_local_pct: number
   distancia_total_optimizada_local_km: number
