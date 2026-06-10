@@ -82,7 +82,11 @@ export default function AdminPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', paddingTop: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAF8' }}>
-      <p style={{ color: '#00A651', fontWeight: 500 }}>Cargando...</p>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 40, height: 40, border: '3px solid #E5E7EB', borderTopColor: '#00A651', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
+        <p style={{ color: '#6B7280', fontSize: 14 }}>Cargando...</p>
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 

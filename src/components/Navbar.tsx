@@ -66,49 +66,39 @@ export default function Navbar() {
         </nav>
 
         {/* User */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {user ? (
-            <>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ color: '#111827', fontSize: 13, fontWeight: 500, margin: 0 }}>{user.nombre}</p>
-                <span style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: ROL_COLOR[user.rol]?.color,
-                  background: ROL_COLOR[user.rol]?.bg,
-                  borderRadius: 20,
-                  padding: '1px 7px',
-                }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 12, padding: '6px 10px 6px 6px' }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: ROL_COLOR[user.rol]?.bg, flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: ROL_COLOR[user.rol]?.color }}>
+                  {user.nombre.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div style={{ lineHeight: 1.2 }}>
+                <p style={{ color: '#111827', fontSize: 13, fontWeight: 600, margin: 0 }}>{user.nombre}</p>
+                <span style={{ fontSize: 10, fontWeight: 600, color: ROL_COLOR[user.rol]?.color }}>
                   {user.rol}
                 </span>
               </div>
               <button
                 onClick={signOut}
-                style={{
-                  fontSize: 12,
-                  color: '#6B7280',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: 8,
-                  padding: '6px 12px',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                }}
+                title="Cerrar sesión"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0 2px 6px', color: '#9CA3AF', borderLeft: '1px solid #E5E7EB', display: 'flex', alignItems: 'center' }}
               >
-                Salir
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
               </button>
-            </>
+            </div>
           ) : (
             <Link
               to="/login"
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#fff',
-                background: '#00A651',
-                borderRadius: 8,
-                padding: '8px 16px',
-                textDecoration: 'none',
-              }}
+              style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: '#00A651', borderRadius: 8, padding: '8px 16px', textDecoration: 'none' }}
             >
               Iniciar sesión
             </Link>

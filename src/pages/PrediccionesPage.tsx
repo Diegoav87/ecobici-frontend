@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getLatestPrediccion, ejecutarPrediccion, completarRuta } from '../services/ecobici'
 import type { Prediccion, Ruta } from '../types'
@@ -135,6 +135,8 @@ export default function PrediccionesPage() {
   const [running, setRunning] = useState(false)
   const [error, setError] = useState('')
   const [filtro, setFiltro] = useState<'all' | Prioridad>('all')
+  const [visibleCount, setVisibleCount] = useState(40)
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const canOperate = user?.rol === 'admin' || user?.rol === 'operador'
 
   const load = () => {
@@ -175,6 +177,18 @@ export default function PrediccionesPage() {
 
   const filtradas = filtro === 'all' ? rutasConPrioridad : rutasConPrioridad.filter(r => r.prioridad === filtro)
 
+  useEffect(() => { setVisibleCount(40) }, [filtro, prediccion])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) setVisibleCount(c => c + 40)
+    }, { threshold: 0.1 })
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [loading])
+
   const counts = {
     vaciar:  rutasConPrioridad.filter(r => r.prioridad === 'vaciar').length,
     llenar:  rutasConPrioridad.filter(r => r.prioridad === 'llenar').length,
@@ -184,7 +198,11 @@ export default function PrediccionesPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', paddingTop: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAF8' }}>
-      <p style={{ color: '#00A651', fontWeight: 500 }}>Cargando predicción...</p>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 40, height: 40, border: '3px solid #E5E7EB', borderTopColor: '#00A651', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
+        <p style={{ color: '#6B7280', fontSize: 14 }}>Cargando predicción...</p>
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 
@@ -281,7 +299,7 @@ export default function PrediccionesPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filtradas.length === 0 ? (
                 <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '40px 0' }}>No hay rutas en esta categoría</p>
-              ) : filtradas.map(({ ruta, prioridad, station }) => (
+              ) : filtradas.slice(0, visibleCount).map(({ ruta, prioridad, station }) => (
                 <RutaRow
                   key={ruta.id}
                   ruta={ruta}
@@ -291,6 +309,11 @@ export default function PrediccionesPage() {
                   onComplete={() => handleComplete(ruta.id)}
                 />
               ))}
+            </div>
+            <div ref={sentinelRef} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {visibleCount < filtradas.length && (
+                <div style={{ width: 24, height: 24, border: '2px solid #E5E7EB', borderTopColor: '#00A651', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+              )}
             </div>
           </>
         )}

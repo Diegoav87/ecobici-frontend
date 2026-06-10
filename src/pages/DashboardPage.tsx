@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getLatestPrediccion } from '../services/ecobici'
 import type { Prediccion } from '../types'
 import api from '../services/api'
@@ -83,22 +83,39 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState<'all' | 'empty' | 'low' | 'ok' | 'full' | 'offline'>('all')
   const [search, setSearch] = useState('')
   const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(40)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const load = () => {
-      api.get('/estaciones')
-        .then(res => {
-          setStations(res.data)
-          setLastUpdate(new Date())
-        })
-        .catch(() => null)
-      getLatestPrediccion().then(setPrediccion).catch(() => null)
+    const load = (isFirst = false) => {
+      Promise.all([
+        api.get('/estaciones').catch(() => ({ data: [] })),
+        getLatestPrediccion().catch(() => null),
+      ]).then(([estRes, pred]) => {
+        setStations(estRes.data)
+        setPrediccion(pred)
+        setLastUpdate(new Date())
+        if (isFirst) setLoading(false)
+      })
     }
 
-    load()
-    const interval = setInterval(load, 30_000)
+    load(true)
+    const interval = setInterval(() => load(false), 30_000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => { setVisibleCount(40) }, [filter, search])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) setVisibleCount(c => c + 40)
+    }, { threshold: 0.1 })
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [loading])
 
   const filtered = stations.filter(s => {
     const matchFilter = filter === 'all' || getStatus(s.pct_full, s.is_renting) === filter
@@ -125,6 +142,16 @@ export default function DashboardPage() {
     { key: 'full',    label: 'Llenas',        count: counts.full },
     { key: 'offline', label: 'Offline',       count: counts.offline },
   ]
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#F8FAF8', paddingTop: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 40, height: 40, border: '3px solid #E5E7EB', borderTopColor: '#00A651', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
+        <p style={{ color: '#6B7280', fontSize: 14 }}>Cargando estaciones...</p>
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  )
 
   return (
     <div style={{ minHeight: '100vh', background: '#F8FAF8', paddingTop: 64 }}>
@@ -218,12 +245,17 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
-          {filtered.map(s => <StationCard key={s.station_id} s={s} />)}
+          {filtered.slice(0, visibleCount).map(s => <StationCard key={s.station_id} s={s} />)}
           {filtered.length === 0 && (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '64px 0', color: '#9CA3AF' }}>
               <p style={{ fontSize: 32, marginBottom: 8 }}>🚲</p>
               <p>No hay estaciones que coincidan</p>
             </div>
+          )}
+        </div>
+        <div ref={sentinelRef} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {visibleCount < filtered.length && (
+            <div style={{ width: 24, height: 24, border: '2px solid #E5E7EB', borderTopColor: '#00A651', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
           )}
         </div>
       </div>
