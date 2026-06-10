@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getUsuarios, getAuditLog, crearUsuario, editarUsuario } from '../services/ecobici'
 import type { Usuario, AuditLog } from '../types'
 
@@ -66,12 +66,20 @@ function Modal({ onClose, onCreate }: { onClose: () => void; onCreate: () => voi
   )
 }
 
+const ACCION_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  EJECUTAR_PREDICCION: { label: 'Predicción ejecutada', color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
+  CREAR_USUARIO:       { label: 'Usuario creado',       color: '#065F46', bg: '#D1FAE5', border: '#6EE7B7' },
+  EDITAR_USUARIO:      { label: 'Usuario editado',      color: '#92400E', bg: '#FEF3C7', border: '#FDE68A' },
+}
+
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('usuarios')
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [visibleLogs, setVisibleLogs] = useState(40)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const loadUsuarios = () => getUsuarios().then(setUsuarios).catch(() => null)
   const loadLogs = () => getAuditLog().then(setLogs).catch(() => null)
@@ -79,6 +87,20 @@ export default function AdminPage() {
   useEffect(() => {
     Promise.all([loadUsuarios(), loadLogs()]).finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { setVisibleLogs(40) }, [tab])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) setVisibleLogs(c => c + 40)
+    }, { threshold: 0.1 })
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [loading])
+
+  const usuarioMap = Object.fromEntries(usuarios.map(u => [u.id, u]))
 
   if (loading) return (
     <div style={{ minHeight: '100vh', paddingTop: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAF8' }}>
@@ -128,27 +150,38 @@ export default function AdminPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {usuarios.map(u => (
               <div key={u.id} style={{
-                background: '#fff', border: '1px solid #F0F0F0', borderRadius: 12, padding: '14px 16px',
+                background: u.activo ? '#fff' : '#FAFAFA',
+                border: `1px solid ${u.activo ? '#F0F0F0' : '#E5E7EB'}`,
+                borderRadius: 12, padding: '14px 16px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
-                opacity: u.activo ? 1 : 0.5, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
               }}>
                 <div>
-                  <p style={{ color: '#111827', fontSize: 14, fontWeight: 600, margin: 0 }}>{u.nombre}</p>
-                  <p style={{ color: '#6B7280', fontSize: 12, margin: '2px 0 0' }}>{u.email}</p>
+                  <p style={{ color: u.activo ? '#111827' : '#9CA3AF', fontSize: 14, fontWeight: 600, margin: 0 }}>{u.nombre}</p>
+                  <p style={{ color: u.activo ? '#6B7280' : '#9CA3AF', fontSize: 12, margin: '2px 0 0' }}>{u.email}</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <select value={u.rol} onChange={e => editarUsuario(u.id, { rol: e.target.value }).then(loadUsuarios)}
-                    style={{
-                      fontSize: 12, fontWeight: 600, border: 'none', borderRadius: 20,
-                      padding: '4px 10px', cursor: 'pointer', outline: 'none',
-                      color: ROL_STYLE[u.rol]?.color, background: ROL_STYLE[u.rol]?.bg,
-                    }}>
-                    {ROL_OPTIONS.map(r => <option key={r} value={r} style={{ background: '#fff', color: '#111' }}>{r}</option>)}
-                  </select>
+                  <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                    <select value={u.rol} onChange={e => editarUsuario(u.id, { rol: e.target.value }).then(loadUsuarios)}
+                      style={{
+                        fontSize: 11, fontWeight: 700, borderRadius: 20, cursor: 'pointer', outline: 'none',
+                        padding: '4px 24px 4px 10px', appearance: 'none',
+                        border: `1.5px solid ${ROL_STYLE[u.rol]?.color}`,
+                        color: ROL_STYLE[u.rol]?.color,
+                        background: ROL_STYLE[u.rol]?.bg,
+                      }}>
+                      {ROL_OPTIONS.map(r => <option key={r} value={r} style={{ background: '#fff', color: '#111' }}>{r}</option>)}
+                    </select>
+                    <svg style={{ position: 'absolute', right: 8, pointerEvents: 'none', color: ROL_STYLE[u.rol]?.color }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
                   <button onClick={() => editarUsuario(u.id, { activo: !u.activo }).then(loadUsuarios)}
                     style={{
-                      fontSize: 12, fontWeight: 500, cursor: 'pointer', borderRadius: 8, padding: '5px 12px', border: '1px solid #E5E7EB',
-                      background: u.activo ? '#FEF2F2' : '#F0FAF4', color: u.activo ? '#DC2626' : '#00A651',
+                      fontSize: 12, fontWeight: 500, cursor: 'pointer', borderRadius: 8, padding: '5px 12px',
+                      border: `1px solid ${u.activo ? '#FECACA' : '#BBF7D0'}`,
+                      background: u.activo ? '#FEF2F2' : '#F0FAF4',
+                      color: u.activo ? '#DC2626' : '#00A651',
                     }}>
                     {u.activo ? 'Desactivar' : 'Activar'}
                   </button>
@@ -163,26 +196,54 @@ export default function AdminPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {logs.length === 0
               ? <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '48px 0' }}>Sin actividad registrada</p>
-              : logs.map(log => (
-                  <div key={log.id} style={{ background: '#fff', border: '1px solid #F0F0F0', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#00A651', fontFamily: 'monospace' }}>{log.accion}</span>
-                        {log.detalle && <span style={{ fontSize: 12, color: '#374151' }}>{log.detalle}</span>}
+              : logs.slice(0, visibleLogs).map(log => {
+                  const cfg = ACCION_CONFIG[log.accion]
+                  const autor = log.usuario_id ? usuarioMap[log.usuario_id] : null
+                  return (
+                    <div key={log.id} style={{ background: '#fff', border: '1px solid #F0F0F0', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: cfg?.bg ?? '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${cfg?.border ?? '#E5E7EB'}` }}>
+                          <span style={{ fontSize: 15 }}>
+                            {log.accion === 'EJECUTAR_PREDICCION' ? '🤖' : log.accion === 'CREAR_USUARIO' ? '👤' : '✏️'}
+                          </span>
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: cfg?.color ?? '#374151', background: cfg?.bg ?? '#F3F4F6', border: `1px solid ${cfg?.border ?? '#E5E7EB'}`, borderRadius: 20, padding: '2px 8px' }}>
+                              {cfg?.label ?? log.accion}
+                            </span>
+                            {log.detalle && (
+                              <span style={{ fontSize: 12, color: '#6B7280' }}>{log.detalle}</span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 11, color: '#9CA3AF' }}>
+                              {autor ? autor.nombre : log.usuario_id ? `Usuario #${log.usuario_id}` : 'Sistema'}
+                            </span>
+                            {log.ip_address && (
+                              <>
+                                <span style={{ color: '#E5E7EB' }}>·</span>
+                                <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>{log.ip_address}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 10 }}>
-                        {log.ip_address && <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>{log.ip_address}</span>}
-                        <span style={{ fontSize: 11, color: '#D1D5DB' }}>usuario #{log.usuario_id}</span>
-                      </div>
+                      <span style={{ fontSize: 11, color: '#9CA3AF', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {new Date(log.timestamp).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
-                    <span style={{ fontSize: 11, color: '#9CA3AF', whiteSpace: 'nowrap' }}>
-                      {new Date(log.timestamp).toLocaleString('es-MX')}
-                    </span>
-                  </div>
-                ))
+                  )
+                })
             }
+            <div ref={sentinelRef} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {visibleLogs < logs.length && (
+                <div style={{ width: 24, height: 24, border: '2px solid #E5E7EB', borderTopColor: '#00A651', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+              )}
+            </div>
           </div>
         )}
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
 
       {showModal && <Modal onClose={() => setShowModal(false)} onCreate={loadUsuarios} />}

@@ -45,10 +45,11 @@ function PctBar({ pct, color }: { pct: number; color: string }) {
   )
 }
 
-function RutaRow({ ruta, prioridad, station, onComplete, canComplete }: {
+function RutaRow({ ruta, prioridad, station, stationDest, onComplete, canComplete }: {
   ruta: Ruta
   prioridad: Prioridad
   station?: Station
+  stationDest?: Station
   onComplete: () => void
   canComplete: boolean
 }) {
@@ -59,6 +60,9 @@ function RutaRow({ ruta, prioridad, station, onComplete, canComplete }: {
     setLoading(true)
     try { await onComplete() } finally { setLoading(false) }
   }
+
+  const nombreOrigen = station?.name ?? ruta.estacion_origen
+  const nombreDestino = stationDest?.name ?? ruta.estacion_destino
 
   return (
     <div style={{
@@ -75,7 +79,7 @@ function RutaRow({ ruta, prioridad, station, onComplete, canComplete }: {
       boxShadow: ruta.completada ? 'none' : '0 1px 4px rgba(0,0,0,0.04)',
     }}>
       <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 20, padding: '2px 8px', fontWeight: 600 }}>
             {cfg.label}
           </span>
@@ -90,21 +94,18 @@ function RutaRow({ ruta, prioridad, station, onComplete, canComplete }: {
               {ruta.distancia_km.toFixed(1)} km
             </span>
           )}
+          {station && (
+            <span style={{ fontSize: 11, color: station.pct_full > 0.75 ? '#DC2626' : '#6B7280', background: '#F3F4F6', borderRadius: 6, padding: '2px 7px' }}>
+              origen {Math.round(station.pct_full * 100)}% llena
+            </span>
+          )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <div>
-            <span style={{ color: '#111827', fontSize: 13, fontWeight: 600 }}>{ruta.estacion_origen}</span>
-            {station && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                <PctBar pct={station.pct_full} color={station.pct_full > 0.75 ? '#EF4444' : '#00A651'} />
-                <span style={{ fontSize: 10, color: '#9CA3AF' }}>{Math.round(station.pct_full * 100)}%</span>
-              </div>
-            )}
-          </div>
-          <span style={{ color: '#00A651', fontWeight: 700, fontSize: 16 }}>→</span>
-          <span style={{ color: '#111827', fontSize: 13, fontWeight: 600 }}>{ruta.estacion_destino}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: '#111827', fontSize: 13, fontWeight: 600 }}>{nombreOrigen}</span>
+          <span style={{ color: '#00A651', fontWeight: 700, fontSize: 14 }}>→</span>
+          <span style={{ color: '#111827', fontSize: 13, fontWeight: 600 }}>{nombreDestino}</span>
         </div>
-        <p style={{ color: '#6B7280', fontSize: 12, marginTop: 4 }}>
+        <p style={{ color: '#6B7280', fontSize: 12, marginTop: 5 }}>
           <span style={{ color: cfg.color, fontWeight: 700 }}>{ruta.bicicletas_a_mover}</span> bicicletas a mover
         </p>
       </div>
@@ -173,6 +174,7 @@ export default function PrediccionesPage() {
     ruta: r,
     prioridad: getRutaPrioridad(r, stations),
     station: stations[r.estacion_origen],
+    stationDest: stations[r.estacion_destino],
   })).sort((a, b) => PRIORIDAD_CONFIG[a.prioridad].order - PRIORIDAD_CONFIG[b.prioridad].order)
 
   const filtradas = filtro === 'all' ? rutasConPrioridad : rutasConPrioridad.filter(r => r.prioridad === filtro)
@@ -299,12 +301,13 @@ export default function PrediccionesPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {filtradas.length === 0 ? (
                 <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '40px 0' }}>No hay rutas en esta categoría</p>
-              ) : filtradas.slice(0, visibleCount).map(({ ruta, prioridad, station }) => (
+              ) : filtradas.slice(0, visibleCount).map(({ ruta, prioridad, station, stationDest }) => (
                 <RutaRow
                   key={ruta.id}
                   ruta={ruta}
                   prioridad={prioridad}
                   station={station}
+                  stationDest={stationDest}
                   canComplete={canOperate}
                   onComplete={() => handleComplete(ruta.id)}
                 />
