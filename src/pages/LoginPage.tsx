@@ -1,3 +1,4 @@
+// Pantalla de acceso. Un mismo formulario alterna entre login y registro de cuenta nueva (mode). Tras un login exitoso redirige al Dashboard; tras un registro exitoso regresa al modo login para que el usuario entre.
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'

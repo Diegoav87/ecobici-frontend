@@ -1,3 +1,6 @@
+// Capa de funciones que llaman a cada endpoint del backend.
+// Mantener esta capa separada permite cambiar rutas/formatos del API
+// sin tocar los componentes que las consumen.
 import api from './api'
 import type { Prediccion, Ruta, Usuario, AuditLog } from '../types'
 

@@ -1,3 +1,5 @@
+// Panel exclusivo para admins: gestión de usuarios (crear, cambiar rol,
+// activar/desactivar) y bitácora de auditoría de acciones del sistema.
 import { useEffect, useRef, useState } from 'react'
 import { getUsuarios, getAuditLog, crearUsuario, editarUsuario } from '../services/ecobici'
 import type { Usuario, AuditLog } from '../types'
@@ -9,6 +11,9 @@ const ROL_STYLE: Record<string, { color: string; bg: string }> = {
   operador: { color: '#065F46', bg: '#D1FAE5' },
   viewer:   { color: '#1E40AF', bg: '#DBEAFE' },
 }
+
+// Formulario de alta de usuario nuevo. Cierra solo si la creación
+// fue exitosa; si falla, muestra el error y deja el formulario abierto.
 
 function Modal({ onClose, onCreate }: { onClose: () => void; onCreate: () => void }) {
   const [form, setForm] = useState({ nombre: '', email: '', password: '', rol: 'viewer' })
@@ -65,6 +70,9 @@ function Modal({ onClose, onCreate }: { onClose: () => void; onCreate: () => voi
     </div>
   )
 }
+
+// Texto e iconos legibles para cada tipo de evento registrado en el
+// audit log (las acciones crudas vienen del backend en mayúsculas).
 
 const ACCION_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   EJECUTAR_PREDICCION: { label: 'Predicción ejecutada', color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },

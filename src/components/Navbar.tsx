@@ -1,3 +1,6 @@
+// Barra de navegación. Los links visibles dependen del rol del usuario
+// (ver navItems: viewer solo ve Estaciones, operador suma Predicciones,
+// admin ve todo incluyendo Admin).
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -6,6 +9,8 @@ const navItems = [
   { to: '/predicciones', label: 'Predicciones', roles: ['admin', 'operador'] },
   { to: '/admin', label: 'Admin', roles: ['admin'] },
 ]
+
+// Colores distintivos por rol, usados en el avatar y la etiqueta del usuario.
 
 const ROL_COLOR: Record<string, { color: string; bg: string }> = {
   admin:    { color: '#92400E', bg: '#FEF3C7' },

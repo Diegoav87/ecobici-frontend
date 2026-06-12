@@ -1,3 +1,4 @@
+// Vista principal, pública (no requiere login). Muestra el estado en tiempo real de todas las estaciones de Ecobici y se refresca solo  cada 30 segundos.
 import { useEffect, useRef, useState } from 'react'
 import { getLatestPrediccion } from '../services/ecobici'
 import type { Prediccion } from '../types'
@@ -13,6 +14,13 @@ interface Station {
   is_renting: number
 }
 
+// Clasifica una estación según su % de ocupación (pct_full):
+// - offline: la estación no está aceptando operaciones (is_renting=0)
+// - empty: <=10% de bicis -> riesgo de quedarse sin servicio
+// - low: <=25% -> pocas bicis, candidata a llenado
+// - full: >=90% -> casi sin espacio para devoluciones
+// - ok: rango normal de operación
+
 function getStatus(pct: number, isRenting: number) {
   if (!isRenting) return 'offline'
   if (pct <= 0.1) return 'empty'
@@ -20,6 +28,7 @@ function getStatus(pct: number, isRenting: number) {
   if (pct <= 0.25) return 'low'
   return 'ok'
 }
+// Configuración visual (texto, color) para cada estado de getStatus().
 
 const STATUS_CONFIG = {
   ok:      { label: 'Disponible',       color: '#00A651', bg: '#F0FAF4', border: '#C3E8D4' },
@@ -87,6 +96,8 @@ export default function DashboardPage() {
   const [visibleCount, setVisibleCount] = useState(40)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
+// Carga estaciones + última predicción al montar, y luego cada 30s
+// para mantener el dashboard "en vivo" sin que el usuario recargue.
   useEffect(() => {
     const load = (isFirst = false) => {
       Promise.all([
@@ -105,6 +116,9 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
+  // Scroll infinito: cuando el sentinel (div invisible al final de la
+// lista) entra en pantalla, se revelan 40 estaciones más. Evita
+// renderizar las ~680 estaciones de golpe.
   useEffect(() => { setVisibleCount(40) }, [filter, search])
 
   useEffect(() => {

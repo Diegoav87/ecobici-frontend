@@ -1,3 +1,6 @@
+// Vista para operadores y admins. Permite ejecutar el modelo de ML
+// de rebalanceo y dar seguimiento a las rutas generadas, marcándolas
+// como completadas a medida que el equipo en campo las realiza.
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getLatestPrediccion, ejecutarPrediccion, completarRuta } from '../services/ecobici'
@@ -14,6 +17,15 @@ interface Station {
 
 type Prioridad = 'vaciar' | 'llenar' | 'vigilar' | 'ok'
 
+// Determina la urgencia de una ruta según el % de ocupación de las
+// estaciones involucradas:
+// - vaciar: la estación de origen está casi llena (>75%) -> riesgo de
+//   que la gente no pueda devolver bicis ahí
+// - llenar: la estación destino está casi vacía (<15%) -> riesgo de
+//   que la gente no encuentre bicis
+// - vigilar: zona intermedia que conviene monitorear
+// - ok: sin urgencia
+
 function getPrioridad(pct: number): Prioridad {
   if (pct > 0.75) return 'vaciar'
   if (pct < 0.15) return 'llenar'
@@ -29,6 +41,9 @@ function getRutaPrioridad(ruta: Ruta, stationMap: Record<string, Station>): Prio
   if (origen?.pct_full > 0.65 || destino?.pct_full < 0.25) return 'vigilar'
   return 'ok'
 }
+
+// Config visual + orden de despliegue para cada nivel de prioridad
+// (vaciar y llenar urgente van primero).
 
 const PRIORIDAD_CONFIG = {
   vaciar:  { label: 'Vaciar urgente',  color: '#EF4444', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444', order: 0 },
@@ -158,6 +173,10 @@ export default function PrediccionesPage() {
 
   useEffect(() => { load() }, [])
 
+  // Dispara la ejecución del modelo ML en el backend. Solo visible para
+// admin/operador. Si el backend o el servicio ML fallan, se muestra
+// un mensaje de error sin romper la página.
+
   const handleEjecutar = async () => {
     setRunning(true); setError('')
     try { const p = await ejecutarPrediccion(); setPrediccion(p) }
@@ -170,6 +189,9 @@ export default function PrediccionesPage() {
   }
 
   // Agrupar rutas por prioridad
+  // Cruza cada ruta con los datos en vivo de sus estaciones (origen/destino)
+// para poder calcular su prioridad real y mostrar el % de ocupación actual,
+// y las ordena para que las más urgentes aparezcan primero.
   const rutasConPrioridad = (prediccion?.rutas ?? []).map(r => ({
     ruta: r,
     prioridad: getRutaPrioridad(r, stations),

@@ -1,3 +1,6 @@
+// Instancia central de Axios. Inyecta el token JWT en cada request
+// (si existe) y, si el backend responde 401 con un token guardado,
+// lo limpia y manda al usuario a /login (sesión expirada o inválida).
 import axios from 'axios'
 
 const api = axios.create({

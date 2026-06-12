@@ -1,3 +1,6 @@
+// Envuelve rutas que requieren sesión activa (y opcionalmente un rol específico).
+// Mientras AuthContext valida el token, muestra un spinner para evitar
+// parpadeos o redirecciones prematuras a /login.
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import type { Rol } from '../types'
@@ -19,6 +22,8 @@ export default function ProtectedRoute({ children, roles }: Props) {
   }
 
   if (!user) return <Navigate to="/login" replace />
+// Si el usuario está logueado pero su rol no tiene permiso para esta
+// página, lo regresamos al Dashboard en vez de a Login.
   if (roles && !roles.includes(user.rol)) return <Navigate to="/dashboard" replace />
 
   return <>{children}</>
